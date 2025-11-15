@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday!</title>
+    <!-- Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Google Fonts for Playfair Display and Satoshi (via Inter for simplicity) -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.150.1/three.min.js"></script>
+    <!-- GSAP CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --primary-bg: #0c0a09;
+            --card-bg: rgba(15, 12, 11, 0.7);
+            --text-light: #e0e0e0;
+            --text-gradient-start: #ffaddb;
+            --text-gradient-end: #ffffff;
+            --button-gradient-start: #ff6e8f;
+            --button-gradient-end: #e73c7e;
+            --progress-gradient-start: #ff6e8f;
+            --progress-gradient-end: #e73c7e;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif; /* Using Inter as a close alternative for Satoshi via CDN */
+            color: var(--text-light);
+            background-color: var(--primary-bg);
+            overflow: hidden; /* Prevent scroll for full-screen effects */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        h1, h2 {
+            font-family: 'Playfair Display', serif;
+            background: linear-gradient(90deg, var(--text-gradient-start), var(--text-gradient-end));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Aurora background animation */
+        .aurora-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 80%, hsla(333,70%,55%,.4) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, hsla(282, 82%, 54%, .3) 0%, transparent 50%),
+                        radial-gradient(circle at 10% 50%, hsla(210, 89%, 60%, .3) 0%, transparent 50%),
+                        radial-gradient(circle at 90% 90%, hsla(35, 90%, 60%, .3) 0%, transparent 50%);
+            background-size: 400% 400%;
+            animation: aurora-flow 25s ease infinite alternate;
+            z-index: -2;
+        }
+
+        @keyframes aurora-flow {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        /* Glassmorphism Card Style */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem; /* Equivalent to rounded-3xl */
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            padding: 2.5rem; /* Equivalent to p-10 */
+            max-width: 90%;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Pill Button Style */
+        .pill-button {
+            background: linear-gradient(90deg, var(--button-gradient-start), var(--button-gradient-end));
+            border-radius: 9999px; /* Equivalent to rounded-full */
+            color: white;
+            padding: 0.75rem 2rem; /* Equivalent to px-8 py-3 */
+            font-weight: 700; /* Equivalent to font-bold */
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 0 15px rgba(255, 100, 150, 0.5);
+        }
+
+        .pill-button:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 0 25px rgba(255, 100, 150, 0.8);
+        }
+
+        .pill-button:active {
+            transform: translateY(1px) scale(1.02);
+            box-shadow: 0 0 10px rgba(255, 100, 150, 0.4);
+        }
+
+        /* Progress Bar */
+        .progress-bar-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 600px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 5px;
+            z-index: 50;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--progress-gradient-start), var(--progress-gradient-end));
+            border-radius: 5px;
+            transition: width 0.7s ease-out;
+        }
+
+        /* Emoji Icon Pulsate */
+        .pulsating-icon {
+            animation: pulse-glow 2s infinite alternate;
+            display: inline-block; /* Essential for animation */
+        }
+
+        @keyframes pulse-glow {
+            0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 100, 150, 0.5)); }
+            100% { transform: scale(1.1); filter: drop-shadow(0 0 15px rgba(255, 100, 150, 0.8)); }
+        }
+
+        /* Bento Grid */
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .bento-card-1 { grid-column: span 2; }
+        .bento-card-3 { grid-column: span 2; }
+
+        .bento-grid .glass-card {
+            padding: 1.5rem;
+            text-align: left;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .bento-grid .glass-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--text-gradient-start), var(--text-gradient-end));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .bento-grid .glass-card p {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        /* Polaroid Effect */
+        .polaroid-container {
+            position: relative;
+            display: inline-block;
+            transform: rotate(-5deg); /* Initial slight tilt */
+            transition: transform 0.3s ease-out;
+            will-change: transform;
+            perspective: 1000px;
+        }
+
+        .polaroid {
+            background: white;
+            padding: 15px 15px 50px 15px; /* Adjust padding for caption */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            position: relative;
+        }
+
+        .polaroid img {
+            display: block;
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            border: 1px solid #eee;
+        }
+
+        .polaroid-caption {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #333;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Confetti Canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 100; /* Above everything else */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .glass-card {
+                padding: 1.5rem;
+                border-radius: 1rem;
+            }
+            .bento-grid {
+                grid-template-columns: 1fr;
+            }
+            .bento-card-1, .bento-card-3 {
+                grid-column: span 1;
+            }
+            .progress-bar-container {
+                width: 90%;
+            }
+            .polaroid img {
+                max-width: 250px;
+            }
+        }
+    </style>
+</head>
+<body class="selection:bg-pink-300 selection:text-pink-900">
+    <!-- Aurora Background Layer -->
+    <div class="aurora-background"></div>
+
+    <!-- Three.js Hearts Canvas -->
+    <canvas id="heartsCanvas" class="fixed top-0 left-0 w-full h-full z-0"></canvas>
+
+    <!-- Confetti Canvas -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <main class="relative z-10 w-full max-w-2xl text-center p-4">
+        <!-- Step 1: The Grand Welcome -->
+        <div id="step-1" class="glass-card flex flex-col items-center space-y-6">
+            <div class="text-6xl pulsating-icon">❤️</div>
+            <h1 class="text-5xl font-bold">Hey Beautiful,</h1>
+            <p class="text-lg leading-relaxed">I built a little world for you, just to bring a smile to your face on your special day.</p>
+            <button class="pill-button" onclick="nextStep()">Let's Begin</button>
+        </div>
+
+        <!-- Step 2: The Core Message (Hidden initially) -->
+        <div id="step-2" class="glass-card flex flex-col items-center space-y-6 hidden absolute top-0 left-0 w-full h-full">
+            <div class="text-6xl pulsating-icon">🎉</div>
+            <h2 class="text-4xl font-bold">Happy Birthday!</h2>
+            <p class="text-lg leading-relaxed">Another year of you making the world brighter. Your existence is a gift, and I'm so lucky to witness it.</p>
+            <button class="pill-button" onclick="nextStep()">There's more...</button>
+        </div>
+
+        <!-- Step 3: The Reasons Why (Hidden initially) -->
+        <div id="step-3" class="glass-card flex flex-col items-center space-y-8 hidden absolute top-0 left-0 w-full h-full">
+            <h2 class="text-4xl font-bold">A Few Things I Adore About You</h2>
+            <div class="bento-grid w-full">
+                <div class="glass-card bento-card-1">
+                    <h3>✨ Your Unmatched Kindness</h3>
+                    <p>The genuine warmth you show to everyone is something truly rare and beautiful.</p>
+                </div>
+                <div class="glass-card">
+                    <h3>😊 That Smile</h3>
+                    <p>It's a work of art.</p>
+                </div>
+                <div class="glass-card bento-card-3">
+                    <h3>🌟 Your Radiant Spirit</h3>
+                    <p>Your passion for life is infectious. Being around you makes everything feel more exciting and possible.</p>
+                </div>
+            </div>
+            <button class="pill-button" onclick="nextStep()">Remember this?</button>
+        </div>
+
+        <!-- Step 4: The Shared Memory (Hidden initially) -->
+        <div id="step-4" class="glass-card flex flex-col items-center space-y-6 hidden absolute top-0 left-0 w-full h-full">
+            <h2 class="text-4xl font-bold">That One Time...</h2>
+            <div class="polaroid-container relative cursor-pointer" id="polaroidContainer">
+                <div class="polaroid">
+                    <img src="https://i.ibb.co/6Z6XgCg/crush.webp" alt="Our favorite memory">
+                    <div class="polaroid-caption">Our favorite memory.</div>
+                </div>
+            </div>
+            <p class="text-lg leading-relaxed">Every moment with you feels like a scene from a movie I'd watch on repeat.</p>
+            <button class="pill-button" onclick="nextStep()">One last thing...</button>
+        </div>
+
+        <!-- Step 5: The Birthday Wish & Finale (Hidden initially) -->
+        <div id="step-5" class="glass-card flex flex-col items-center space-y-6 hidden absolute top-0 left-0 w-full h-full">
+            <div class="text-6xl pulsating-icon">🎂</div>
+            <h2 class="text-4xl font-bold">My Wish For You</h2>
+            <p class="text-lg leading-relaxed">May the next year bring you all the love, success, and pure happiness you so rightfully deserve. May your dreams soar higher than ever.</p>
+            <p id="finalMessage" class="text-3xl font-bold mt-8 hidden"></p>
+            <button id="celebrateButton" class="pill-button" onclick="celebrate()">Celebrate!</button>
+        </div>
+    </main>
+
+    <script>
+        // Three.js Hearts Background
+        let scene, camera, renderer, hearts = [];
+        const heartMaterial = new THREE.MeshPhongMaterial({ color: 0xff6699, emissive: 0xcc3366, specular: 0xffffff, shininess: 50 });
+
+        function initHearts() {
+            const canvas = document.getElementById('heartsCanvas');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scene.add(ambientLight);
+            const pointLight = new THREE.PointLight(0xffffff, 1);
+            pointLight.position.set(10, 10, 10);
+            scene.add(pointLight);
+
+            // Heart Geometry (simple heart approximation)
+            const heartShape = new THREE.Shape();
+            heartShape.moveTo(0.25, 0.25);
+            heartShape.bezierCurveTo(0.25, 0.25, 0.2, 0, 0, 0);
+            heartShape.bezierCurveTo(-0.3, 0, -0.3, 0.35, -0.3, 0.35);
+            heartShape.bezierCurveTo(-0.3, 0.55, -0.1, 0.77, 0.25, 0.95);
+            heartShape.bezierCurveTo(0.6, 0.77, 0.8, 0.55, 0.8, 0.35);
+            heartShape.bezierCurveTo(0.8, 0.35, 0.8, 0, 0.5, 0);
+            heartShape.bezierCurveTo(0.35, 0, 0.25, 0.25, 0.25, 0.25);
+
+            const extrudeSettings = {
+                steps: 2,
+                depth: 0.1,
+                bevelEnabled: true,
+                bevelThickness: 0.05,
+                bevelSize: 0.05,
+                bevelOffset: 0,
+                bevelSegments: 10
+            };
+            const heartGeometry = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
+
+            // Create 20-25 hearts
+            for (let i = 0; i < 25; i++) {
+                const heart = new THREE.Mesh(heartGeometry, heartMaterial);
+
+                heart.scale.setScalar(Math.random() * 0.5 + 0.2); // Random size
+                heart.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI); // Random rotation
+                heart.position.set(
+                    (Math.random() - 0.5) * 20, // X position
+                    (Math.random() - 0.5) * 20, // Y position
+                    (Math.random() - 0.5) * 20  // Z position
+                );
+                scene.add(heart);
+                hearts.push(heart);
+            }
+
+            camera.position.z = 5;
+            animateHearts();
+        }
+
+        function animateHearts() {
+            requestAnimationFrame(animateHearts);
+
+            const time = Date.now() * 0.0005;
+
+            hearts.forEach((heart, index) => {
+                heart.position.y += Math.sin(time + index) * 0.005;
+                heart.position.x += Math.cos(time + index) * 0.003;
+                heart.rotation.y += 0.002;
+                heart.rotation.x += 0.001;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResizeHearts() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.addEventListener('resize', onWindowResizeHearts, false);
+        window.onload = initHearts; // Initialize hearts when the window loads
+
+        // GSAP for step transitions
+        let currentStep = 1;
+        const totalSteps = 5;
+        const steps = [];
+        for (let i = 1; i <= totalSteps; i++) {
+            steps.push(document.getElementById(`step-${i}`));
+        }
+        const progressBar = document.getElementById('progressBar');
+
+        function updateProgressBar() {
+            const progress = (currentStep - 1) / (totalSteps - 1) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                const currentElement = steps[currentStep - 1];
+                const nextElement = steps[currentStep];
+
+                gsap.to(currentElement, {
+                    opacity: 0,
+                    y: 50,
+                    scale: 0.95,
+                    duration: 0.6,
+                    ease: "power2.inOut",
+                    onComplete: () => {
+                        currentElement.classList.add('hidden');
+                        currentElement.style.position = 'absolute'; // Ensure it doesn't take up space
+                        currentElement.style.top = '0';
+                        currentElement.style.left = '0';
+                        currentElement.style.width = '100%';
+                        currentElement.style.height = '100%';
+
+                        nextElement.classList.remove('hidden');
+                        nextElement.style.opacity = 0;
+                        nextElement.style.transform = 'translateY(50px) scale(0.95)';
+                        nextElement.style.position = 'relative'; // Make it visible again
+
+                        gsap.to(nextElement, {
+                            opacity: 1,
+                            y: 0,
+                            scale: 1,
+                            duration: 0.8,
+                            ease: "power2.out",
+                            stagger: 0.1, // Stagger internal elements
+                            onStart: () => {
+                                // Animate children for stagger effect
+                                gsap.fromTo(nextElement.children, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, stagger: 0.1, ease: "power2.out" });
+                            }
+                        });
+                        currentStep++;
+                        updateProgressBar();
+                    }
+                });
+            }
+        }
+
+        // Initial setup for the first step
+        steps[0].classList.remove('hidden');
+        gsap.fromTo(steps[0], { opacity: 0, y: 50, scale: 0.95 }, { opacity: 1, y: 0, scale: 1, duration: 1, ease: "power2.out" });
+        gsap.fromTo(steps[0].children, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.1, ease: "power2.out" });
+        updateProgressBar();
+
+        // Polaroid Parallax Effect
+        const polaroidContainer = document.getElementById('polaroidContainer');
+        if (polaroidContainer) {
+            polaroidContainer.addEventListener('mousemove', (e) => {
+                const { clientX, clientY } = e;
+                const { left, top, width, height } = polaroidContainer.getBoundingClientRect();
+                const centerX = left + width / 2;
+                const centerY = top + height / 2;
+
+                const rotateX = (clientY - centerY) / height * 10; // Max 10 degrees
+                const rotateY = (centerX - clientX) / width * 10; // Max 10 degrees
+
+                gsap.to(polaroidContainer, {
+                    rotationX: rotateX,
+                    rotationY: rotateY,
+                    transformPerspective: 1000,
+                    duration: 0.3,
+                    ease: "power1.out"
+                });
+            });
+
+            polaroidContainer.addEventListener('mouseleave', () => {
+                gsap.to(polaroidContainer, {
+                    rotationX: 0,
+                    rotationY: 0,
+                    transform: 'rotate(-5deg)', // Reset to initial tilt
+                    duration: 0.5,
+                    ease: "elastic.out(1, 0.3)"
+                });
+            });
+        }
+
+        // Confetti and Finale
+        const confettiCanvas = document.getElementById('confetti-canvas');
+        const myConfetti = confetti.create(confettiCanvas, { resize: true, use  Worker: true });
+
+        function celebrate() {
+            const celebrateButton = document.getElementById('celebrateButton');
+            const finalMessage = document.getElementById('finalMessage');
+
+            // Disable button and fade out
+            gsap.to(celebrateButton, { opacity: 0, duration: 0.5, onComplete: () => {
+                celebrateButton.disabled = true;
+                celebrateButton.style.display = 'none';
+            }});
+
+            // Show final message
+            finalMessage.innerText = "Happy Birthday, my crush! ❤️";
+            finalMessage.classList.remove('hidden');
+            gsap.fromTo(finalMessage, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 1, ease: "power3.out", delay: 0.5 });
+
+            // Confetti Bursts
+            setTimeout(() => {
+                myConfetti({
+                    particleCount: 200,
+                    spread: 160,
+                    origin: { y: 1.0, x: 0.1 },
+                    colors: ['#ffaddb', '#ff6e8f', '#e73c7e', '#ffffff']
+                });
+                myConfetti({
+                    particleCount: 200,
+                    spread: 160,
+                    origin: { y: 1.0, x: 0.9 },
+                    colors: ['#ffaddb', '#ff6e8f', '#e73c7e', '#ffffff']
+                });
+            }, 1000);
+
+            // Continuous Confetti Shower & Emoji Confetti
+            let confettiInterval = setInterval(() => {
+                myConfetti({
+                    particleCount: 50,
+                    spread: 360,
+                    startVelocity: 30,
+                    origin: { x: Math.random(), y: Math.random() - 0.2 },
+                    colors: ['#ffaddb', '#ff6e8f', '#e73c7e', '#ffffff']
+                });
+
+                myConfetti({
+                    particleCount: 15,
+                    spread: 360,
+                    startVelocity: 25,
+                    origin: { x: Math.random(), y: Math.random() - 0.2 },
+                    shapes: ['heart', 'star'],
+                    scalar: 1.5,
+                    colors: ['#ff6e8f', '#ffaddb']
+                });
+
+                // Emoji confetti
+                myConfetti({
+                    particleCount: 10,
+                    spread: 360,
+                    startVelocity: 20,
+                    origin: { x: Math.random(), y: Math.random() - 0.2 },
+                    shapes: [myConfetti.shapeFromText('❤️'), myConfetti.shapeFromText('💖'), myConfetti.shapeFromText('✨')],
+                    scalar: 1.2
+                });
+
+            }, 200); // More frequent bursts
+
+            setTimeout(() => {
+                clearInterval(confettiInterval);
+            }, 5000); // Stop confetti after 5 seconds
+
+            // Hearts final animation
+            hearts.forEach((heart, index) => {
+                gsap.to(heart.position, {
+                    y: heart.position.y + 15,
+                    x: heart.position.x + (Math.random() - 0.5) * 10,
+                    z: heart.position.z + (Math.random() - 0.5) * 10,
+                    duration: 3 + Math.random() * 2,
+                    ease: "power2.out"
+                });
+                gsap.to(heart.scale, {
+                    x: 0, y: 0, z: 0,
+                    duration: 3 + Math.random() * 2,
+                    ease: "power2.in",
+                    delay: 1 // Start fading after some movement
+                });
+                gsap.to(heartMaterial, {
+                    opacity: 0,
+                    duration: 2,
+                    delay: 1,
+                    onUpdate: () => heartMaterial.needsUpdate = true,
+                    onComplete: () => scene.remove(heart) // Remove heart from scene when faded
+                });
+            });
+        }
+    </script>
+</body>
+</html>
